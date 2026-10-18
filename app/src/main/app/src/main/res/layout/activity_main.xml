@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Shizuku Status: Not Connected"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp"
+        android:textColor="@android:color/holo_red_dark"/>
+
+    <Button
+        android:id="@+id/btnConnectShizuku"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="اتصال مع Shizuku"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnUnlockCar"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="فتح الأبواب (NFC / DoorLock)"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"
+        android:enabled="false"/>
+
+    <Button
+        android:id="@+id/btnDiLinkSettings"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="تعديل إعدادات DiLink ونظام السيارة"
+        android:textSize="16sp"
+        android:enabled="false"/>
+
+</LinearLayout>
