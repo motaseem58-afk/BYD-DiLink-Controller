@@ -17,16 +17,13 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Check project files & Create missing root files
+    - name: Inspect & Fix Missing Gradle Files
       run: |
-        echo "--- Files in root ---"
-        ls -la
-        echo "--- Files in app/ ---"
-        ls -la app/
-        
-        # إنشاء ملف settings.gradle إذا لم يكن موجوداً
-        if [ ! -f settings.gradle ] && [ ! -f settings.gradle.kts ]; then
-          cat << 'EOF' > settings.gradle
+        echo "=== Checking full directory structure ==="
+        find . -maxdepth 4 -not -path '*/.*'
+
+        # 1. إنشاء settings.gradle الرئيسي
+        cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
                 google()
@@ -44,14 +41,68 @@ jobs:
         rootProject.name = "BYD-DiLink-Controller"
         include ':app'
         EOF
-        fi
 
-        # إنشاء ملف build.gradle الرئيسي إذا لم يكن موجوداً
-        if [ ! -f build.gradle ] && [ ! -f build.gradle.kts ]; then
-          cat << 'EOF' > build.gradle
+        # 2. إنشاء build.gradle الرئيسي
+        cat << 'EOF' > build.gradle
         plugins {
-            id 'com.android.application' version '8.2.0' apply false
-            id 'org.jetbrains.kotlin.android' version '1.9.20' apply false
+            id 'com.android.application' version '8.2.2' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
+        }
+        EOF
+
+        # 3. إنشاء gradle.properties
+        cat << 'EOF' > gradle.properties
+        org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+        android.useAndroidX=true
+        android.nonTransitiveRClass=true
+        EOF
+
+        # 4. فحص وإنشاء app/build.gradle إذا كان مفقوداً
+        if [ ! -f app/build.gradle ] && [ ! -f app/build.gradle.kts ]; then
+          echo "app/build.gradle is missing! Generating it automatically..."
+          
+          # محاولة استخراج اسم الحزمة (package) من ملف AndroidManifest.xml أو ملفات الكود
+          PKG=$(grep -oP 'package="\K[^"]+' app/src/main/AndroidManifest.xml 2>/dev/null || true)
+          if [ -z "$PKG" ]; then
+            PKG=$(grep -rh -oP '^package \K[a-zA-Z0-9_.]+' app/src/main/ 2>/dev/null | head -n 1 || true)
+          fi
+          if [ -z "$PKG" ]; then
+            PKG="com.byd.dilink.controller"
+          fi
+          echo "Detected Namespace / Package: $PKG"
+
+          cat << EOF > app/build.gradle
+        plugins {
+            id 'com.android.application'
+            id 'org.jetbrains.kotlin.android'
+        }
+
+        android {
+            namespace '$PKG'
+            compileSdk 34
+
+            defaultConfig {
+                applicationId "$PKG"
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
+            kotlinOptions {
+                jvmTarget = '17'
+            }
+        }
+
+        dependencies {
+            implementation 'androidx.core:core-ktx:1.12.0'
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.11.0'
+            implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
         }
         EOF
         fi
@@ -62,7 +113,7 @@ jobs:
         gradle-version: '8.5'
 
     - name: Build Debug APK
-      run: gradle :app:assembleDebug --stacktrace
+      run: gradle :app:assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
